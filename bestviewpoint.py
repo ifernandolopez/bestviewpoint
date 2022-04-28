@@ -18,6 +18,7 @@ WndId  = None
 Current3DModel = None
 ShowFace = -1 # Face index, or -1 for all faces
 Wireframe = False
+OBJS_DIR = 'bestviewpoint/objs'
 
 # Tentative3DModel and Tentative2DModel states used during optimization:
 #    None - Optimization has no been executed, or has finished
@@ -254,14 +255,14 @@ def popupMenuCB(value):
 def createPopupMenu():
     global ObjFiles
     glutCreateMenu(popupMenuCB)
-    ObjFiles =  [os.path.split(f)[-1] for f in glob.glob('Fernando/objs/*.obj')]
+    ObjFiles =  [os.path.split(f)[-1] for f in glob.glob(OBJS_DIR + '/*.obj')]
     for i,f in enumerate(ObjFiles):
         glutAddMenuEntry(f, i)
     glutAttachMenu(GLUT_RIGHT_BUTTON)
 
 def loadModel(file_index):
-    global Current3DModel, bjFiles
-    Current3DModel = model3d.loadModel('Fernando/objs/' + ObjFiles[file_index])
+    global Current3DModel, ObjFiles
+    Current3DModel = model3d.loadModel(OBJS_DIR + '/' + ObjFiles[file_index])
     title = 'Arrows (move in shere) Space (Restore) R (Run optimizer) W (Wireframe/Solid) Number (ShowFace) ' \
           + 'Right Click (Load File): %s' % ObjFiles[file_index]
     glutSetWindowTitle(title)
