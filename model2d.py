@@ -169,14 +169,16 @@ def profitProjectedFacesArea(model_2d):
         else: # CW faces are back faces
             n_back_faces += 1     
         faces_area += np.abs(face_area)
-    return (0.5 * faces_area, balance(n_front_faces, n_back_faces) )
+    return (0.5 * faces_area, balance(n_front_faces, n_back_faces), n_front_faces, n_back_faces )
 
 def repulsion_force(d, t):
         inv_t = 1/t
-        try:
-            r = 1 / (1+np.exp(inv_t*(inv_t*d-0.5)))
-        except (ex):
-            print('d=',d)
+        exponent = inv_t*(inv_t*d-0.5)
+        if exponent > 10: # Speed up avoiding calculate r when r->0
+            exponent = 10
+            r = 0
+        else:
+            r = 1 / (1+np.exp(exponent))
         return r
     
 def penaltyCloseVertices(model_2d):
@@ -211,15 +213,15 @@ if __name__ == '__main__':
     glutInitWindowSize(500, 500)
     WndId = glutCreateWindow('')
     # Perform the test
-    model_3d = model3d.loadModel('Fernando/objs/cube.obj')
+    model_3d = model3d.loadModel(model3d.Model3D.OBJS_DIR + '/cross.obj')
     Mpers = model3d.computeProjectionMatrix(model_3d, 1.0)
     Mmv = model3d.computeModelviewMatrix(model_3d)
     model_2d = compute2dModel(model_3d, Mpers, Mmv)
     print('Vertices 2D:\n' + str(np.round(model_2d.vertices,3)))
     print('IFS 2D:\n' + str(model_2d.ifaces))
     print('IEDGES 2D:' + str(model_2d.iedges))
-    profit_area, visibility_ratio = profitProjectedFacesArea(model_2d)
-    print('Profit area:(%.3f*%.3f)=%.3f' % (profit_area, visibility_ratio, profit_area*visibility_ratio))
+    profit_area, balance_ratio, f, b = profitProjectedFacesArea(model_2d)
+    print('Profit area:(%.3f*%.2f)=%.3f b(f=%d, b=%d)=%.2f' % (profit_area, balance_ratio, profit_area*balance_ratio, f, b, balance_ratio))
     vertices_repulsion = penaltyCloseVertices(model_2d)
     print('Close vertices total repulsion force:', vertices_repulsion)
     [n_crosses, edges_repulsion] = penaltyCrossedAndCloseEdges(model_2d)

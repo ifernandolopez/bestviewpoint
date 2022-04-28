@@ -31,6 +31,7 @@ class Model3D:
     DEFAULT_THETA = 0
     DEFAULT_PHI = 90
     DEFAULT_FOVY = 60
+    OBJS_DIR = 'bestviewpoint/objs' 
     EDGES_COLOR = (0.1, 0.5, 0.9, 1.0)
     FACES_COLOR = (0.7, 0.8, 0.9, 0.6)
     TOP_VIEW_SCORE = 2
@@ -152,7 +153,7 @@ if __name__ == '__main__':
     glutInitWindowSize(500, 500)
     WndId = glutCreateWindow('')
     # Perform the test
-    model_3d = loadModel('Fernando/objs/cube.obj')
+    model_3d = loadModel(Model3D.OBJS_DIR + '/cube.obj')
     print('Vertices 3D:\n', np.round(model_3d.vertices,3))
     print('IFS:\n', model_3d.ifaces)
     Mpers = computeProjectionMatrix(model_3d, 1.0)

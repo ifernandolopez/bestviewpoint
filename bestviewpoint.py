@@ -18,7 +18,6 @@ WndId  = None
 Current3DModel = None
 ShowFace = -1 # Face index, or -1 for all faces
 Wireframe = False
-OBJS_DIR = 'bestviewpoint/objs'
 
 # Tentative3DModel and Tentative2DModel states used during optimization:
 #    None - Optimization has no been executed, or has finished
@@ -62,20 +61,20 @@ def drawStringBitmaps (x, y, color, str):
 def profitInfo(model_3d, model_2d):
     """ Return profit info for the parameters
         (area, balance_ratio, crosses_repulsion, vertices_repulsion, edges_repulsion, legend) """
-    area, balance_ratio = model2d.profitProjectedFacesArea(model_2d)
+    area, balance_ratio,f, b = model2d.profitProjectedFacesArea(model_2d)
     vertices_repulsion = model2d.penaltyCloseVertices(model_2d)
     [crosses_repulsion, edges_repulsion] = model2d.penaltyCrossedAndCloseEdges(model_2d)
     top_view_legend, top_view_score = '', 0.0
     if model_3d.top_view():
         top_view_score = model_3d.TOP_VIEW_SCORE
-        top_view_legend = ' (+%.1f profit top_view)' % top_view_score
+        top_view_legend = ' (+%.1f top_view)' % top_view_score
     profit = area*balance_ratio +top_view_score
     penalty = crosses_repulsion + vertices_repulsion + edges_repulsion
     total = np.round(profit-penalty,2)
     if total == -0.0:
         total = 0.0
-    profit_legend = 'Profit: %.2f-%.2f=%.2f%s' % (profit, penalty, total, top_view_legend)
-    return (area, balance_ratio, crosses_repulsion, vertices_repulsion, edges_repulsion, profit_legend)
+    profit_legend = 'Profit: %.2f-%.2f=%.2f  %s' % (profit, penalty, total, top_view_legend)
+    return (area, balance_ratio, f, b, crosses_repulsion, vertices_repulsion, edges_repulsion, profit_legend)
 
 def povLegend(model_3d):
     rho_info = 'Rho=' + "%.2f" % model_3d.rho
@@ -93,7 +92,7 @@ def draw3dInfo(model_2d):
         optimization_legend = 'Optimizing T: %.2f' % Optimizer.T
         if Optimizer.has_cooled:
             optimization_legend += ' (cooling)'
-    area, balance_ratio, crosses_repulsion, vertices_repulsion, edges_repulsion, profit_legend = profitInfo(Current3DModel, model_2d)    
+    area, balance_ratio, f, b, crosses_repulsion, vertices_repulsion, edges_repulsion, profit_legend = profitInfo(Current3DModel, model_2d)    
     if Wireframe:
         material_legend = 'Wireframe'
     else:
@@ -110,7 +109,7 @@ def draw3dInfo(model_2d):
     drawStringBitmaps(-0.95, -0.60, Current3DModel.EDGES_COLOR, projection_legend + material_legend)
     drawStringBitmaps(-0.95, -0.69, Current3DModel.EDGES_COLOR, pov_legend)
     drawStringBitmaps(-0.95, -0.78, Current3DModel.EDGES_COLOR, profit_legend)
-    area_legend = 'Area: %.2f*%.2f=%.2f' % (area, balance_ratio, area*balance_ratio)
+    area_legend = 'Area: %.2f*%.1f=%.2f  balance(f=%d,b=%d)=%.1f' % (area, balance_ratio, area*balance_ratio, f, b, balance_ratio)
     drawStringBitmaps(-0.95, -0.87, Current3DModel.EDGES_COLOR, area_legend)
     repulsion_legend = 'Repulsion (V: %.2f, C:%.2f, E: %.2f)'  % (-vertices_repulsion, -crosses_repulsion, -edges_repulsion)
     drawStringBitmaps(-0.95, -0.96, Current3DModel.EDGES_COLOR, repulsion_legend)
@@ -122,9 +121,9 @@ def draw2dInfo(model_2d):
     black = (0.0, 0.0, 0.0, 1.0)
     pov_legend = povLegend(Tentative3DModel)
     drawStringBitmaps(-1.0, -0.69, black, pov_legend)
-    area, balance_ratio, crosses_repulsion, vertices_repulsion, edges_repulsion, profit_legend = profitInfo(Tentative3DModel, Tentative2DModel)
+    area, balance_ratio, f, b, crosses_repulsion, vertices_repulsion, edges_repulsion, profit_legend = profitInfo(Tentative3DModel, Tentative2DModel)
     drawStringBitmaps(-1.0, -0.78, black, profit_legend)
-    area_legend = 'Area: %.2f*%.2f=%.2f' % (area, balance_ratio, area*balance_ratio)
+    area_legend = 'Area: %.2f*%.1f=%.2f balance(f=%d,b=%d)=%.1f' % (area, balance_ratio, area*balance_ratio, f, b, balance_ratio)
     drawStringBitmaps(-1.0, -0.87, black, area_legend)
     repulsion_legend = 'Repulsion (V: %.2f, C:%.2f, E: %.2f)'  % (-vertices_repulsion, -crosses_repulsion, -edges_repulsion)
     drawStringBitmaps(-1.0, -0.96, black, repulsion_legend)
@@ -226,7 +225,7 @@ def tentative_3d_model_cost_fn(tentative_sol):
     Mmv = model3d.computeModelviewMatrix(Tentative3DModel)
     Tentative2DModel = model2d.compute2dModel(Current3DModel, Mpers, Mmv)
     resetGLMatrices()
-    profit_area, balance_ratio = model2d.profitProjectedFacesArea(Tentative2DModel)
+    profit_area, balance_ratio, f, b = model2d.profitProjectedFacesArea(Tentative2DModel)
     vertices_repulsion = model2d.penaltyCloseVertices(Tentative2DModel)
     [crosses_repulsion, edges_repulsion] = model2d.penaltyCrossedAndCloseEdges(Tentative2DModel)
     total = -profit_area*balance_ratio + vertices_repulsion + crosses_repulsion + edges_repulsion
@@ -259,14 +258,14 @@ def popupMenuCB(value):
 def createPopupMenu():
     global ObjFiles
     glutCreateMenu(popupMenuCB)
-    ObjFiles =  [os.path.split(f)[-1] for f in glob.glob(OBJS_DIR + '/*.obj')]
+    ObjFiles =  [os.path.split(f)[-1] for f in glob.glob(model3d.Model3D.OBJS_DIR + '/*.obj')]
     for i,f in enumerate(ObjFiles):
         glutAddMenuEntry(f, i)
     glutAttachMenu(GLUT_RIGHT_BUTTON)
 
 def loadModel(file_index):
     global Current3DModel, ObjFiles
-    Current3DModel = model3d.loadModel(OBJS_DIR + '/' + ObjFiles[file_index])
+    Current3DModel = model3d.loadModel(model3d.Model3D.OBJS_DIR + '/' + ObjFiles[file_index])
     title = 'Arrows (move in shere) Space (Restore) R (Run optimizer) W (Wireframe/Solid) Number (ShowFace) ' \
           + 'Right Click (Load File): %s' % ObjFiles[file_index]
     glutSetWindowTitle(title)
