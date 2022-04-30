@@ -12,7 +12,7 @@ import os
 # Global variables
 WndTitle = 'Starting'
 WndTopDecorativeGap = 10
-WndBottomLegendGap = 160
+WndBottomLegendGap = 170
 WndWidth, WndHeight = 1000, 500 + WndTopDecorativeGap + WndBottomLegendGap
 WndId  = None
 Current3DModel = None
@@ -131,7 +131,8 @@ def draw2dInfo(model_2d):
 def displayCB():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glViewport(0, WndBottomLegendGap, WndWidth//2, WndHeight-WndBottomLegendGap-WndTopDecorativeGap)
-    Mpers = model3d.computeProjectionMatrix(Current3DModel, WndWidth/2.0/(WndHeight-WndBottomLegendGap-WndTopDecorativeGap))
+    aspect_ratio = WndWidth/2.0/(WndHeight-WndBottomLegendGap-WndTopDecorativeGap)
+    Mpers = model3d.computeProjectionMatrix(Current3DModel, aspect_ratio)
     Mmv = model3d.computeModelviewMatrix(Current3DModel)
     model3d.draw3dModel(Current3DModel, Wireframe, ShowFace)
     glViewport(0, 0, WndWidth//2, WndHeight) # The 3D viewport lower-left corner and the width-height in pixels
@@ -221,7 +222,8 @@ def tentative_3d_model_cost_fn(tentative_sol):
     global Tentative3DModel, Tentative2DModel
     Tentative3DModel = copy.copy(Current3DModel) # Shallow copy of the outermost container
     Tentative3DModel.rho, Tentative3DModel.theta, Tentative3DModel.phi = tentative_sol
-    Mpers = model3d.computeProjectionMatrix(Tentative3DModel, WndWidth/2.0/(WndHeight-WndBottomLegendGap-WndTopDecorativeGap))
+    aspect_ratio = WndWidth/2.0/(WndHeight-WndBottomLegendGap-WndTopDecorativeGap)
+    Mpers = model3d.computeProjectionMatrix(Tentative3DModel, aspect_ratio)
     Mmv = model3d.computeModelviewMatrix(Tentative3DModel)
     Tentative2DModel = model2d.compute2dModel(Current3DModel, Mpers, Mmv)
     resetGLMatrices()

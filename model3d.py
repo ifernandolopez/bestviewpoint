@@ -76,15 +76,18 @@ def loadModel(path):
         model_3d.DEFAULT_RHO = model_3d.rho = 2 * model_3d.minRadius
     return model_3d
 
-def computeProjectionMatrix(model_3d, aspect_ratio):
-    """ Compute the projection matrix Mpers for the selected perspective """
+def computeProjectionMatrix(model_3d, aspect_ratio, projection = None):
+    """ Compute the projection matrix Mpers for the selected proyection """
+    """ If projection == None uses the projection indicated in the model_3d.projection attribute """
+    if projection == None:
+        projection = model_3d.projection
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     near, far = 0.01, 2*model_3d.rho
     fustrum_size = model_3d.rho
-    if model_3d.projection == ProjectionType.ORTOGONAL:
+    if projection == ProjectionType.ORTOGONAL:
         glOrtho(-fustrum_size/2, fustrum_size/2, -fustrum_size/2, fustrum_size/2, near, far)
-    elif model_3d.projection == ProjectionType.CABINET:
+    elif projection == ProjectionType.CABINET:
         glLoadMatrixd(ProjectionType.cabinetMatrix())
         glOrtho(-fustrum_size/2, fustrum_size/2, -fustrum_size/2, fustrum_size/2, near, far)
     else:
@@ -156,7 +159,8 @@ if __name__ == '__main__':
     model_3d = loadModel(Model3D.OBJS_DIR + '/cube.obj')
     print('Vertices 3D:\n', np.round(model_3d.vertices,3))
     print('IFS:\n', model_3d.ifaces)
-    Mpers = computeProjectionMatrix(model_3d, 1.0)
+    aspect_ratio = 1.0
+    Mpers = computeProjectionMatrix(model_3d, aspect_ratio)
     print('GL_PROJECTION_MATRIX:\n' + str(np.round(Mpers,3)))
     Mmv = computeModelviewMatrix(model_3d)
     print('GL_MODELVIEW_MATRIX:\n' + str(np.round(Mmv,3)))

@@ -101,18 +101,19 @@ class Model2D:
 
 def compute2dModel(model_3d, Mpers, Mmv):
     """ Return a Model2D with the projection of the the model_3d according to Mpers a Mmv
-        In turn, the Mpers and Mmv were consctructed using the projection, rho, theta, phi an fovy of the model_3d """
+        The Mpers and Mmv were constructed using the projection, rho, theta, phi an fovy of the model_3d """
     Mcomposed = np.matmul(Mmv, Mpers)
     model_2d = Model2D(model_3d)
     # First, we project the vertices
     n_vertices = len(model_3d.vertices)
-    # We multiply in homogeneous coordinates
+    # We multiply in homogeneous coordinates to obtain the clipping coordinates
     vertices_4d_homogeneous = np.c_[model_3d.vertices, np.ones(n_vertices)]
     model_2d.vertices = np.matmul(vertices_4d_homogeneous,Mcomposed)
-    # Normalize the homogeneous coordinates and reconvert it to geometric coordinates
+    # Normalize the homogeneous clipping coordinates
     model_2d.vertices = (model_2d.vertices[:,:].T / model_2d.vertices[:,-1]).T
+    # Reconvert to geometric coordinates
     model_2d.vertices = model_2d.vertices[:,:3]
-    # Second, we obtain the projected the faces
+    # Second, we obtain the projected faces
     model_2d.ifaces = model_3d.ifaces.copy()
     # Third, we obtain the edges, removing duplicates
     adj_matrix = AdjMatrix(n_vertices)
@@ -213,8 +214,10 @@ if __name__ == '__main__':
     glutInitWindowSize(500, 500)
     WndId = glutCreateWindow('')
     # Perform the test
-    model_3d = model3d.loadModel(model3d.Model3D.OBJS_DIR + '/cross.obj')
-    Mpers = model3d.computeProjectionMatrix(model_3d, 1.0)
+    model_3d = model3d.loadModel(model3d.Model3D.OBJS_DIR + '/cube.obj')
+    aspect_ratio = 1.0
+    projection_type = model3d.ProjectionType.CABINET
+    Mpers = model3d.computeProjectionMatrix(model_3d, aspect_ratio, projection_type)
     Mmv = model3d.computeModelviewMatrix(model_3d)
     model_2d = compute2dModel(model_3d, Mpers, Mmv)
     print('Vertices 2D:\n' + str(np.round(model_2d.vertices,3)))
