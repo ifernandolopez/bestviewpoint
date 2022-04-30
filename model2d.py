@@ -148,7 +148,7 @@ def draw2dModel(model_2d):
 def balance(f,b):
     return (f*b-max(f,b)) / max(f,b)
 
-def profitProjectedFacesArea(model_2d):
+def profitProjectedFacesArea(model_2d, is_top_view):
     """ Compute a profit for the projected faces area """
     """ Constraint: This area is 0.0 if any point has been proyected outside the clipping window (-1,-1) to (1, 1) """
     """ Return (faces_area, visibility_ratio)"""
@@ -170,7 +170,10 @@ def profitProjectedFacesArea(model_2d):
         else: # CW faces are back faces
             n_back_faces += 1     
         faces_area += np.abs(face_area)
-    return (0.5 * faces_area, balance(n_front_faces, n_back_faces), n_front_faces, n_back_faces )
+    total_area = 0.5 * faces_area
+    if is_top_view:
+        total_area += total_area*model3d.Model3D.TOP_VIEW_AREA_INFLATION_PERCENTAGE
+    return (total_area, balance(n_front_faces, n_back_faces), n_front_faces, n_back_faces )
 
 def repulsion_force(d, t):
         inv_t = 1/t
@@ -223,7 +226,7 @@ if __name__ == '__main__':
     print('Vertices 2D:\n' + str(np.round(model_2d.vertices,3)))
     print('IFS 2D:\n' + str(model_2d.ifaces))
     print('IEDGES 2D:' + str(model_2d.iedges))
-    profit_area, balance_ratio, f, b = profitProjectedFacesArea(model_2d)
+    profit_area, balance_ratio, f, b = profitProjectedFacesArea(model_2d, model_3d.top_view())
     print('Profit area:(%.3f*%.2f)=%.3f b(f=%d, b=%d)=%.2f' % (profit_area, balance_ratio, profit_area*balance_ratio, f, b, balance_ratio))
     vertices_repulsion = penaltyCloseVertices(model_2d)
     print('Close vertices total repulsion force:', vertices_repulsion)

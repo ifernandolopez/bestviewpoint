@@ -61,19 +61,15 @@ def drawStringBitmaps (x, y, color, str):
 def profitInfo(model_3d, model_2d):
     """ Return profit info for the parameters
         (area, balance_ratio, crosses_repulsion, vertices_repulsion, edges_repulsion, legend) """
-    area, balance_ratio,f, b = model2d.profitProjectedFacesArea(model_2d)
+    area, balance_ratio,f, b = model2d.profitProjectedFacesArea(model_2d, model_3d.top_view())
     vertices_repulsion = model2d.penaltyCloseVertices(model_2d)
     [crosses_repulsion, edges_repulsion] = model2d.penaltyCrossedAndCloseEdges(model_2d)
-    top_view_legend, top_view_score = '', 0.0
-    if model_3d.top_view():
-        top_view_score = model_3d.TOP_VIEW_SCORE
-        top_view_legend = ' (+%.1f top_view)' % top_view_score
-    profit = area*balance_ratio +top_view_score
+    profit = area*balance_ratio 
     penalty = crosses_repulsion + vertices_repulsion + edges_repulsion
     total = np.round(profit-penalty,2)
     if total == -0.0:
         total = 0.0
-    profit_legend = 'Profit: %.2f-%.2f=%.2f  %s' % (profit, penalty, total, top_view_legend)
+    profit_legend = 'Profit: %.2f-%.2f=%.2f' % (profit, penalty, total)
     return (area, balance_ratio, f, b, crosses_repulsion, vertices_repulsion, edges_repulsion, profit_legend)
 
 def povLegend(model_3d):
@@ -105,11 +101,14 @@ def draw3dInfo(model_2d):
         projection_legend = 'Oblique cabinet projection, '
     else:
         projection_legend = 'Perspective projection, '
+    top_view_legend = ''
+    if Current3DModel.top_view():
+        top_view_legend = '(top_view)'
     drawStringBitmaps(-0.95, -0.51, Current3DModel.EDGES_COLOR, optimization_legend)
     drawStringBitmaps(-0.95, -0.60, Current3DModel.EDGES_COLOR, projection_legend + material_legend)
     drawStringBitmaps(-0.95, -0.69, Current3DModel.EDGES_COLOR, pov_legend)
     drawStringBitmaps(-0.95, -0.78, Current3DModel.EDGES_COLOR, profit_legend)
-    area_legend = 'Area: %.2f*%.1f=%.2f  balance(f=%d,b=%d)=%.1f' % (area, balance_ratio, area*balance_ratio, f, b, balance_ratio)
+    area_legend = 'Area: %.2f*%.1f=%.2f balance(f=%d,b=%d)=%.1f %s' % (area, balance_ratio, area*balance_ratio, f, b, balance_ratio, top_view_legend)
     drawStringBitmaps(-0.95, -0.87, Current3DModel.EDGES_COLOR, area_legend)
     repulsion_legend = 'Repulsion (V: %.2f, C:%.2f, E: %.2f)'  % (-vertices_repulsion, -crosses_repulsion, -edges_repulsion)
     drawStringBitmaps(-0.95, -0.96, Current3DModel.EDGES_COLOR, repulsion_legend)
@@ -123,7 +122,10 @@ def draw2dInfo(model_2d):
     drawStringBitmaps(-1.0, -0.69, black, pov_legend)
     area, balance_ratio, f, b, crosses_repulsion, vertices_repulsion, edges_repulsion, profit_legend = profitInfo(Tentative3DModel, Tentative2DModel)
     drawStringBitmaps(-1.0, -0.78, black, profit_legend)
-    area_legend = 'Area: %.2f*%.1f=%.2f balance(f=%d,b=%d)=%.1f' % (area, balance_ratio, area*balance_ratio, f, b, balance_ratio)
+    top_view_legend = ''
+    if Tentative3DModel.top_view():
+        top_view_legend = '(top_view)'
+    area_legend = 'Area: %.2f*%.1f=%.2f balance(f=%d,b=%d)=%.1f %s' % (area, balance_ratio, area*balance_ratio, f, b, balance_ratio, top_view_legend)
     drawStringBitmaps(-1.0, -0.87, black, area_legend)
     repulsion_legend = 'Repulsion (V: %.2f, C:%.2f, E: %.2f)'  % (-vertices_repulsion, -crosses_repulsion, -edges_repulsion)
     drawStringBitmaps(-1.0, -0.96, black, repulsion_legend)
@@ -227,12 +229,10 @@ def tentative_3d_model_cost_fn(tentative_sol):
     Mmv = model3d.computeModelviewMatrix(Tentative3DModel)
     Tentative2DModel = model2d.compute2dModel(Current3DModel, Mpers, Mmv)
     resetGLMatrices()
-    profit_area, balance_ratio, f, b = model2d.profitProjectedFacesArea(Tentative2DModel)
+    area, balance_ratio, f, b = model2d.profitProjectedFacesArea(Tentative2DModel, Tentative3DModel.top_view())
     vertices_repulsion = model2d.penaltyCloseVertices(Tentative2DModel)
     [crosses_repulsion, edges_repulsion] = model2d.penaltyCrossedAndCloseEdges(Tentative2DModel)
-    total = -profit_area*balance_ratio + vertices_repulsion + crosses_repulsion + edges_repulsion
-    if Tentative3DModel.top_view():
-        total += - Tentative3DModel.TOP_VIEW_SCORE
+    total = -area*balance_ratio + vertices_repulsion + crosses_repulsion + edges_repulsion
     return total
 
 def idleCB():
