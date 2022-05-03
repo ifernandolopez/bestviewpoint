@@ -76,18 +76,16 @@ def loadModel(path):
         model_3d.DEFAULT_RHO = model_3d.rho = 2 * model_3d.minRadius
     return model_3d
 
-def computeProjectionMatrix(model_3d, aspect_ratio, projection = None):
+def computeProjectionMatrix(model_3d, aspect_ratio):
     """ Compute the projection matrix Mpers for the selected proyection """
-    """ If projection == None uses the projection indicated in the model_3d.projection attribute """
-    if projection == None:
-        projection = model_3d.projection
+    """ Uses the projection indicated in the model_3d.projection attribute """
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     near, far = 0.01, 2*model_3d.rho
     fustrum_size = model_3d.rho
-    if projection == ProjectionType.ORTOGONAL:
+    if model_3d.projection == ProjectionType.ORTOGONAL:
         glOrtho(-fustrum_size/2, fustrum_size/2, -fustrum_size/2, fustrum_size/2, near, far)
-    elif projection == ProjectionType.CABINET:
+    elif model_3d.projection == ProjectionType.CABINET:
         glLoadMatrixd(ProjectionType.cabinetMatrix())
         glOrtho(-fustrum_size/2, fustrum_size/2, -fustrum_size/2, fustrum_size/2, near, far)
     else:

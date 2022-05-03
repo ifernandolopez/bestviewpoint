@@ -96,6 +96,7 @@ class Model2D:
     def __init__(self, model_3d):
         self.model3D = model3d
         self.vertices = None   # Projected xy vertices
+        self.vertices_z_distances = None # For occlusion detection
         self.ifaces = []          # Projected Indexed Face Set (IFS) with indexed faces
         self.iedges = []       # Projected indexed edges, without duplicates
 
@@ -109,13 +110,20 @@ def compute2dModel(model_3d, Mpers, Mmv):
     # We multiply in homogeneous coordinates to obtain the clipping coordinates
     vertices_4d_homogeneous = np.c_[model_3d.vertices, np.ones(n_vertices)]
     model_2d.vertices = np.matmul(vertices_4d_homogeneous,Mcomposed)
+    # Keep the z distances of the vertices
+    model_2d.vertices_z_distances = model_2d.vertices[:,2]
     # Normalize the homogeneous clipping coordinates
-    model_2d.vertices = (model_2d.vertices[:,:].T / model_2d.vertices[:,-1]).T
+    if model_3d.projection == model3d.ProjectionType.PERSPECTIVE:
+        model_2d.vertices = (model_2d.vertices[:,:].T / model_2d.vertices[:,-1]).T
     # Reconvert to geometric coordinates
     model_2d.vertices = model_2d.vertices[:,:3]
     # Second, we obtain the projected faces
     model_2d.ifaces = model_3d.ifaces.copy()
-    # Third, we obtain the edges, removing duplicates
+    # Third, we measure the area of the projected faces
+    
+    # Fourth, we detect front and back faces, including occlusion
+    
+    # Fifth, we obtain the edges, removing duplicates
     adj_matrix = AdjMatrix(n_vertices)
     for iface in model_2d.ifaces:
         for i in range(len(iface)-1):
@@ -219,8 +227,8 @@ if __name__ == '__main__':
     # Perform the test
     model_3d = model3d.loadModel(model3d.Model3D.OBJS_DIR + '/cube.obj')
     aspect_ratio = 1.0
-    projection_type = model3d.ProjectionType.CABINET
-    Mpers = model3d.computeProjectionMatrix(model_3d, aspect_ratio, projection_type)
+    model_3d.projection = model3d.ProjectionType.PERSPECTIVE
+    Mpers = model3d.computeProjectionMatrix(model_3d, aspect_ratio)
     Mmv = model3d.computeModelviewMatrix(model_3d)
     model_2d = compute2dModel(model_3d, Mpers, Mmv)
     print('Vertices 2D:\n' + str(np.round(model_2d.vertices,3)))
