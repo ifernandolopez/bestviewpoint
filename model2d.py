@@ -90,24 +90,35 @@ def segments_dist(p1, p2, p3, p4):
     """ Return the min distance between the segment p1-p2 and the segment p3-p4 """
     return min(point_segment_dist(p1, p3, p4), point_segment_dist(p2, p3, p4), point_segment_dist(p3, p1, p2), point_segment_dist(p4, p1, p2))
 
+def point_in_polygon(q, vertices):
+    odd = False
+    n = len(vertices)
+    for i in range(n):
+        a, b = vertices[i], vertices[(i+1)%n] # Get the edge vertices
+        # If the ray intersects the edge
+        if ((a[1] <= q[1] and b[1] > q[1]) # test upward crossing
+           or (a[1] > q[1] and b[1] <= q[1])): # test downward crossing
+           # Compute the actual edge-ray x-coordinate intersection
+           t2 = (q[1]-a[1]) / (b[1]-a[1])
+           if q[0] < a[0] + (b[0]-a[0])*t2:
+               odd = not odd
+    # If the number of crossings was odd, the point is in the polygon
+    return odd
+
 def polygon_inside(outer,inner):
     """ Test if the inner polygon is inside the outer polygon """
     outer_maxs = np.amax(outer, axis = 0)
     outer_mins = np.amin(outer, axis = 0)
     inner_maxs = np.amax(inner, axis = 0)
     inner_mins = np.amin(inner, axis = 0)
-    # Compare bounding boxes
+    # Compare bounding boxes 
+    # If the bounding box of the inner goes outside the bounding box of the outer, the inner is not inside
     if (inner_maxs>outer_maxs).any() or (inner_mins<outer_mins).any():
        return False
-    # Check intersections for all the edges
-    np.vstack((outer, outer[0]))
-    np.vstack((inner, inner[0]))
-    for i in range(len((outer))-1):
-        for j in range(len(inner)-1):
-            eo1, eo2 = outer[i], outer[i+1]
-            ei1, ei2 = inner[j], inner[j-1]
-            if intersection(eo1, eo2, ei1, ei2) == Intersection.INTERSECTING:
-                return False
+    # If any of the inner vertex is outside the outer polygon, the inner polygon is not inside
+    for p in inner:
+        if not point_in_polygon(p, outer):
+            return False
     return True
 # 3D model functions
 
@@ -150,15 +161,22 @@ def auxDetectOccludedFaces(model_2d):
         face_vertices_z_distances = model_2d.vertices_z_distances[np.array(iface)-1]
         return np.min(face_vertices_z_distances)
     front_ifaces.sort(key = depth)
-    # Search occuded faces
-    def occlude(i,j):
-        i_vertices = model_2d.getFaceVectices(i)
-        j_vertices = model_2d.getFaceVectices(i)
+    # Search occluded faces and remove them from the front_ifaces
     occluded_faces = []
-    for pos, i in enumerate(front_ifaces):
-        for j in front_ifaces[pos+1:]:
-            if polygon_inside(model_2d.getFaceVectices(i-1)[:,:-1],model_2d.getFaceVectices(j-1)[:,:-1]):
+    pos_i, n_front_faces = 0, len(front_ifaces)
+    while (pos_i<n_front_faces-1):
+        i = front_ifaces[pos_i]
+        pos_j = pos_i+1
+        while (pos_j < n_front_faces):
+            j = front_ifaces[pos_j]
+            if polygon_inside(outer = model_2d.getFaceVectices(i-1)[:,:-1], inner = model_2d.getFaceVectices(j-1)[:,:-1]):
                 occluded_faces.append(j)
+                print('Innner face %d is occluded by outer face %d' % (j,i))
+                del front_ifaces[pos_j]
+                n_front_faces -= 1
+            else:
+                pos_j += 1
+        pos_i +=1
     # Invert the area of occluded faces
     for i in occluded_faces:
         model_2d.areas[i] *= -1

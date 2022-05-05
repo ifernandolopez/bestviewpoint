@@ -94,7 +94,7 @@ def draw3dInfo(model_2d):
     else:
         material_legend = 'Solid'
     if (ShowFace != -1):
-        material_legend += ' (face ' + str(ShowFace) + ')'
+        material_legend += ' (face ' + str(ShowFace+1) + ')'
     if Current3DModel.projection == model3d.ProjectionType.ORTOGONAL:
         projection_legend = 'Ortogonal projection, '
     elif Current3DModel.projection == model3d.ProjectionType.CABINET:
