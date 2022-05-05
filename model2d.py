@@ -89,16 +89,79 @@ def point_segment_dist(p, p0, p1):
 def segments_dist(p1, p2, p3, p4):
     """ Return the min distance between the segment p1-p2 and the segment p3-p4 """
     return min(point_segment_dist(p1, p3, p4), point_segment_dist(p2, p3, p4), point_segment_dist(p3, p1, p2), point_segment_dist(p4, p1, p2))
-    
+
+def polygon_inside(outer,inner):
+    """ Test if the inner polygon is inside the outer polygon """
+    outer_maxs = np.amax(outer, axis = 0)
+    outer_mins = np.amin(outer, axis = 0)
+    inner_maxs = np.amax(inner, axis = 0)
+    inner_mins = np.amin(inner, axis = 0)
+    # Compare bounding boxes
+    if (inner_maxs>outer_maxs).any() or (inner_mins<outer_mins).any():
+       return False
+    # Check intersections for all the edges
+    np.vstack((outer, outer[0]))
+    np.vstack((inner, inner[0]))
+    for i in range(len((outer))-1):
+        for j in range(len(inner)-1):
+            eo1, eo2 = outer[i], outer[i+1]
+            ei1, ei2 = inner[j], inner[j-1]
+            if intersection(eo1, eo2, ei1, ei2) == Intersection.INTERSECTING:
+                return False
+    return True
 # 3D model functions
 
 class Model2D:
     def __init__(self, model_3d):
         self.model3D = model3d
-        self.vertices = None   # Projected xy vertices
+        self.vertices = None  # Projected xy vertices
         self.vertices_z_distances = None # For occlusion detection
-        self.ifaces = []          # Projected Indexed Face Set (IFS) with indexed faces
-        self.iedges = []       # Projected indexed edges, without duplicates
+        self.ifaces = []      # Projected Indexed Face Set (IFS) with indexed faces
+        self.iedges = []      # Projected indexed edges, without duplicates
+        self.areas = {}       # Projected faces area. Or 0.0 if any point has been proyected outside the clipping window
+    def getFaceVectices(self, i):
+        """ i is zero indexed """
+        """ Returns an np.parray wth as many rows as vertices """
+        return self.vertices[np.array(self.ifaces[i])-1]
+
+def auxComputeProjectedFacesArea(model_2d):
+    """ Compute the projected faces area """
+    """ Constraint: This area is 0.0 if any point has been proyected outside the clipping window (-1,-1) to (1, 1) """
+    for i in range(len(model_2d.ifaces)):
+        vertices = model_2d.getFaceVectices(i)
+        # Trigger the contraint
+        if np.max(vertices[:,[0,1]])>1.0 or np.min(vertices[:,[0,1]])<-1.0:
+            self.areas = 0.0
+            return 
+        vertices = np.vstack([vertices,vertices[0]]) # We duplicate the first vertex at the end 
+        downwards, upwards = 0.0, 0.0
+        for j in range(0,len(vertices)-1):
+            downwards += vertices[j,0]*vertices[j+1,1]
+            upwards += vertices[j,1]*vertices[j+1,0] 
+        face_area = 0.5*(upwards-downwards)
+        model_2d.areas[i+1] = face_area  
+
+def auxDetectOccludedFaces(model_2d):
+    # Get the CCW faces
+    front_ifaces = [key for key, value in model_2d.areas.items() if value<0]
+    # Sort the front faces my minimin distance
+    def depth(i):
+        iface = model_2d.ifaces[i-1]
+        face_vertices_z_distances = model_2d.vertices_z_distances[np.array(iface)-1]
+        return np.min(face_vertices_z_distances)
+    front_ifaces.sort(key = depth)
+    # Search occuded faces
+    def occlude(i,j):
+        i_vertices = model_2d.getFaceVectices(i)
+        j_vertices = model_2d.getFaceVectices(i)
+    occluded_faces = []
+    for pos, i in enumerate(front_ifaces):
+        for j in front_ifaces[pos+1:]:
+            if polygon_inside(model_2d.getFaceVectices(i-1)[:,:-1],model_2d.getFaceVectices(j-1)[:,:-1]):
+                occluded_faces.append(j)
+    # Invert the area of occluded faces
+    for i in occluded_faces:
+        model_2d.areas[i] *= -1
 
 def compute2dModel(model_3d, Mpers, Mmv):
     """ Return a Model2D with the projection of the the model_3d according to Mpers a Mmv
@@ -120,9 +183,9 @@ def compute2dModel(model_3d, Mpers, Mmv):
     # Second, we obtain the projected faces
     model_2d.ifaces = model_3d.ifaces.copy()
     # Third, we measure the area of the projected faces
-    
-    # Fourth, we detect front and back faces, including occlusion
-    
+    auxComputeProjectedFacesArea(model_2d)
+    # Fourth, we detect occluded faces, The sign of occluded faces in changed
+    auxDetectOccludedFaces(model_2d)
     # Fifth, we obtain the edges, removing duplicates
     adj_matrix = AdjMatrix(n_vertices)
     for iface in model_2d.ifaces:
@@ -160,25 +223,17 @@ def profitProjectedFacesArea(model_2d, is_top_view):
     """ Compute a profit for the projected faces area """
     """ Constraint: This area is 0.0 if any point has been proyected outside the clipping window (-1,-1) to (1, 1) """
     """ Return (faces_area, visibility_ratio)"""
-    faces_area = 0.0
+    total_area = 0.0
     n_front_faces, n_back_faces = 0, 0
-    for iface in model_2d.ifaces:
-        vertices = model_2d.vertices[np.array(iface)-1]
-        # Trigger the contraint
-        if np.max(vertices[:,[0,1]])>1.0 or np.min(vertices[:,[0,1]])<-1.0:
-            return (-100.0, 1.0)
-        vertices = np.vstack([vertices,vertices[0]]) # We duplicate the first vertex at the end 
-        downwards, upwards = 0.0, 0.0
-        for i in range(0,len(vertices)-1):
-            downwards += vertices[i,0]*vertices[i+1,1]
-            upwards += vertices[i,1]*vertices[i+1,0]   
-        face_area = upwards-downwards   
+    # Trigger the contraint
+    if model_2d.areas == 0.0:
+        return (-100.0, 1.0)
+    for face_area in model_2d.areas.values():  
         if face_area < 0.0: # CCW faces are front faces
             n_front_faces += 1
         else: # CW faces are back faces
             n_back_faces += 1     
-        faces_area += np.abs(face_area)
-    total_area = 0.5 * faces_area
+        total_area += np.abs(face_area)
     if is_top_view:
         total_area += total_area*model3d.Model3D.TOP_VIEW_AREA_INFLATION_PERCENTAGE
     return (total_area, balance(n_front_faces, n_back_faces), n_front_faces, n_back_faces )
@@ -226,14 +281,14 @@ if __name__ == '__main__':
     WndId = glutCreateWindow('')
     # Perform the test
     model_3d = model3d.loadModel(model3d.Model3D.OBJS_DIR + '/cube.obj')
-    aspect_ratio = 1.0
     model_3d.projection = model3d.ProjectionType.PERSPECTIVE
-    Mpers = model3d.computeProjectionMatrix(model_3d, aspect_ratio)
+    Mpers = model3d.computeProjectionMatrix(model_3d, aspect_ratio = 1.0)
     Mmv = model3d.computeModelviewMatrix(model_3d)
     model_2d = compute2dModel(model_3d, Mpers, Mmv)
     print('Vertices 2D:\n' + str(np.round(model_2d.vertices,3)))
     print('IFS 2D:\n' + str(model_2d.ifaces))
     print('IEDGES 2D:' + str(model_2d.iedges))
+    print('AREAS 2D:' + str({key: np.round(value,3) for key, value in model_2d.areas.items()}))
     profit_area, balance_ratio, f, b = profitProjectedFacesArea(model_2d, model_3d.top_view())
     print('Profit area:(%.3f*%.2f)=%.3f b(f=%d, b=%d)=%.2f' % (profit_area, balance_ratio, profit_area*balance_ratio, f, b, balance_ratio))
     vertices_repulsion = penaltyCloseVertices(model_2d)
