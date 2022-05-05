@@ -206,7 +206,7 @@ def keyboardCB(key, x, y):
         if Optimizer==False or Optimizer==True:
             grid_percentage = 0.05
             grid_steps = grid_percentage * np.array((2 * Current3DModel.minRadius, 360, 180))
-            rho, theta, phi = [2*Current3DModel.minRadius,4*Current3DModel.minRadius], [0, 360-grid_steps[1]], [0,180-grid_steps[2]]
+            rho, theta, phi = [2*Current3DModel.minRadius,3*Current3DModel.minRadius], [0, 360-grid_steps[1]], [0,180-grid_steps[2]]
             domains = [rho, theta, phi]
             Optimizer = optimization.SAOptimizer(domains, tentative_3d_model_cost_fn, grid_steps)
             start_sol = [Current3DModel.rho, Current3DModel.theta, Current3DModel.phi]
