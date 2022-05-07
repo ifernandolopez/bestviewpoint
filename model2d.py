@@ -142,7 +142,7 @@ def auxComputeProjectedFacesArea(model_2d):
         vertices = model_2d.getFaceVectices(i)
         # Trigger the contraint
         if np.max(vertices[:,[0,1]])>1.0 or np.min(vertices[:,[0,1]])<-1.0:
-            self.areas = 0.0
+            model_2d.areas = 0.0
             return 
         vertices = np.vstack([vertices,vertices[0]]) # We duplicate the first vertex at the end 
         downwards, upwards = 0.0, 0.0
