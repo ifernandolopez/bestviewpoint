@@ -203,7 +203,8 @@ def compute2dModel(model_3d, Mpers, Mmv):
     # Third, we measure the area of the projected faces
     auxComputeProjectedFacesArea(model_2d)
     # Fourth, we detect occluded faces, The sign of occluded faces in changed
-    auxDetectOccludedFaces(model_2d)
+    if model_2d.areas != 0.0:
+        auxDetectOccludedFaces(model_2d)
     # Fifth, we obtain the edges, removing duplicates
     adj_matrix = AdjMatrix(n_vertices)
     for iface in model_2d.ifaces:
@@ -245,7 +246,7 @@ def profitProjectedFacesArea(model_2d, is_top_view):
     n_front_faces, n_back_faces = 0, 0
     # Trigger the contraint
     if model_2d.areas == 0.0:
-        return (-100.0, 1.0)
+        return (-100.0, 1.0, n_front_faces, n_back_faces)
     for face_area in model_2d.areas.values():  
         if face_area < 0.0: # CCW faces are front faces
             n_front_faces += 1
