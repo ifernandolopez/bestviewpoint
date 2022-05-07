@@ -281,6 +281,7 @@ if __name__ == '__main__':
     # Set the global OpenGL state
     glClearColor(1.0, 1.0, 1.0, 1.0)
     glPolygonOffset(1.0,1.0)
+    glLineStipple(1, 0x000F)
     glEnable(GL_DEPTH_TEST)
     # Set OpenGL callbacks
     glutDisplayFunc(displayCB)

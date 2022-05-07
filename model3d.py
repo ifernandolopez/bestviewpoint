@@ -124,25 +124,22 @@ def draw3dModel(model_3d, wireframe, show_face):
     """ Draw the 3D model in object coordinates """
     glColor4d(*Model3D.EDGES_COLOR)
     glLineWidth(3.0)
-    # 1. Paint dashed edges with polygon and culling off, and blending on
-    glEnable(GL_POLYGON_OFFSET_LINE)
-    glPushAttrib(GL_ENABLE_BIT)
-    glLineStipple(1, 0x000F)
+    # 1. Paint dashed edges with line stipple on, culling and blending off
     glEnable(GL_LINE_STIPPLE)
     draw3dFaces(model_3d, GL_LINE, show_face)
-    glPopAttrib()
-    glDisable(GL_POLYGON_OFFSET_LINE)
-    # 2. Paint faces with polygon offset, culling and blending on 
-    glEnable(GL_CULL_FACE)
+    glDisable(GL_LINE_STIPPLE)
+    # 2. Paint faces with faces polygon offset, culling and blending on 
     if not wireframe:
+        glEnable(GL_POLYGON_OFFSET_FILL)
+        glEnable(GL_CULL_FACE)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glColor4d(*Model3D.FACES_COLOR)
-        glEnable(GL_POLYGON_OFFSET_FILL)
         draw3dFaces(model_3d, GL_FILL, show_face)
-        glDisable(GL_POLYGON_OFFSET_FILL)
         glDisable(GL_BLEND)
-    # 3. Paint edges with, poligon offset, and blending off, culling on
+        glDisable(GL_CULL_FACE)
+        glDisable(GL_POLYGON_OFFSET_FILL)
+    # 3. Paint solid edges with poligon offset and blending and culling off
     glColor4d(*Model3D.EDGES_COLOR)
     draw3dFaces(model_3d, GL_LINE, show_face)
     glDisable(GL_CULL_FACE)
