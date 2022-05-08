@@ -5,7 +5,7 @@ import numpy as np
 sind = lambda degrees: np.sin(np.deg2rad(degrees))
 cosd = lambda degrees: np.cos(np.deg2rad(degrees))
 tand = lambda degrees: np.tan(np.deg2rad(degrees))
-
+distance3D = lambda x,y: np.sqrt((x[0]-y[0])**2 + (x[1]-y[1])**2 + (x[2]-y[2])**2)
 class ProjectionType:
     ORTOGONAL = 0
     CABINET = 1
@@ -69,7 +69,7 @@ def loadModel(path):
     # Compute the radius covering all the model
     model_3d.minRadius = 0.0
     for vertex in model_3d.vertices:
-        distance=np.sqrt((vertex[0]-model_3d.center[0])**2 + (vertex[1]-model_3d.center[1])**2 + (vertex[2]-model_3d.center[2])**2)
+        distance=distance3D(vertex, model_3d.center)
         if (distance > model_3d.minRadius):
             model_3d.minRadius = distance
     if model_3d.DEFAULT_RHO == None:

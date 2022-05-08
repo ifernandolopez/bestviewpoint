@@ -8,6 +8,7 @@ import numpy as np
 import copy
 import glob
 import os
+import pyinstrument
 
 # Global variables
 WndTitle = 'Starting'
@@ -175,9 +176,11 @@ def specialKeyCB(key, x, y):
     elif ( key == GLUT_KEY_END ):
         Current3DModel.rho += 0.5
     glutPostRedisplay()
-    
+
+WithProfiler, Profiler = False, None
+
 def keyboardCB(key, x, y):
-    global ShowFace, Wireframe, Optimizer
+    global ShowFace, Wireframe, Optimizer, Profiler
     if key.isdigit():
         face_index = int(key)
         if (face_index==ShowFace):
@@ -212,10 +215,17 @@ def keyboardCB(key, x, y):
             start_sol = [Current3DModel.rho, Current3DModel.theta, Current3DModel.phi]
             Optimizer.restart(start_sol)
             glutIdleFunc(idleCB)
+            if WithProfiler:
+                Profiler = pyinstrument.Profiler()
+                Profiler.start()
         else:
             glutIdleFunc(None)
             Optimizer = False
             glutPostRedisplay()
+            if WithProfiler:
+                Profiler.stop()
+                Profiler.print()
+                Profiler = None
         return
     elif key == b'\x1b' or key == b'q'  or key == b'Q':
         glutDestroyWindow (WndId)

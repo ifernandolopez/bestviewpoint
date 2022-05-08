@@ -22,8 +22,8 @@ class AdjMatrix:
     def getIndexedEdges(self):
         return self.iedges
     
-def distance2D(a, b):
-    return np.sqrt(np.sum((a-b)**2))
+def distance2D(x, y):
+    return np.sqrt((x[0]-y[0])**2 + (x[1]-y[1])**2)
 
 class Intersection:
     INTERSECTING = 0
@@ -38,7 +38,7 @@ def intersection(p1, p2, p3, p4):
     a, b, c = p2 - p1, p3 - p4,  p1 - p3
     den = a[1]*b[0] - a[0]*b[1]
     # We first analyze the cases where the denominator is zero: quasi-paralled or overlapped
-    if np.isclose(den, 0, atol = 5e-2):
+    if den < 0.05 and den>-0.05:
         return Intersection.PARALLEL
     # Then we detect the NO intersection case
     alpha_num = b[1]*c[0] - b[0]*c[1]
@@ -171,7 +171,6 @@ def auxDetectOccludedFaces(model_2d):
             j = front_ifaces[pos_j]
             if polygon_inside(outer = model_2d.getFaceVectices(i-1)[:,:-1], inner = model_2d.getFaceVectices(j-1)[:,:-1]):
                 occluded_faces.append(j)
-                print('Innner face %d is occluded by outer face %d' % (j,i))
                 del front_ifaces[pos_j]
                 n_front_faces -= 1
             else:
