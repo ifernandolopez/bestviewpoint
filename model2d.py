@@ -130,6 +130,9 @@ class Model2D:
         self.ifaces = []      # Projected Indexed Face Set (IFS) with indexed faces
         self.iedges = []      # Projected indexed edges, without duplicates
         self.areas = {}       # Projected faces area. Or 0.0 if any point has been proyected outside the clipping window
+        self.cachedProfits = None
+        self.cachedPenalties = None
+        
     def getFaceVectices(self, i):
         """ i is zero indexed """
         """ Returns an np.parray wth as many rows as vertices """
@@ -183,6 +186,8 @@ def auxDetectOccludedFaces(model_2d):
 def compute2dModel(model_3d, Mpers, Mmv):
     """ Return a Model2D with the projection of the the model_3d according to Mpers a Mmv
         The Mpers and Mmv were constructed using the projection, rho, theta, phi an fovy of the model_3d """
+    if model_3d.cached2dModel != None:
+        return model_3d.cached2dModel
     Mcomposed = np.matmul(Mmv, Mpers)
     model_2d = Model2D(model_3d)
     # First, we project the vertices
@@ -213,6 +218,7 @@ def compute2dModel(model_3d, Mpers, Mmv):
         iv0, iv1 = iface[-1],iface[0] # Close the polygon edge
         adj_matrix.addEdge(iv0,iv1)
     model_2d.iedges = adj_matrix.getIndexedEdges()
+    model_3d.cached2dModel = model_2d
     return model_2d
 
 def draw2dModel(model_2d):
@@ -237,15 +243,17 @@ def draw2dModel(model_2d):
 def balance(f,b):
     return (f*b-max(f,b)) / max(f,b)
 
-def profitProjectedFacesArea(model_2d, is_top_view):
+def profitsProjectedFacesArea(model_2d, is_top_view):
     """ Compute a profit for the projected faces area """
     """ Constraint: This area is 0.0 if any point has been proyected outside the clipping window (-1,-1) to (1, 1) """
     """ Return (faces_area, visibility_ratio)"""
+    if model_2d.cachedProfits != None:
+        return model_2d.cachedProfits
     total_area = 0.0
     n_front_faces, n_back_faces = 0, 0
     # Trigger the contraint
     if model_2d.areas == 0.0:
-        return (-100.0, 1.0, n_front_faces, n_back_faces)
+        return (-100.0, 0.0, n_front_faces, n_back_faces)
     for face_area in model_2d.areas.values():  
         if face_area < 0.0: # CCW faces are front faces
             n_front_faces += 1
@@ -254,7 +262,8 @@ def profitProjectedFacesArea(model_2d, is_top_view):
         total_area += np.abs(face_area)
     if is_top_view:
         total_area += total_area*model3d.Model3D.TOP_VIEW_AREA_INFLATION_PERCENTAGE
-    return (total_area, balance(n_front_faces, n_back_faces), n_front_faces, n_back_faces )
+    model_2d.cachedProfits = (total_area, balance(n_front_faces, n_back_faces), n_front_faces, n_back_faces )
+    return model_2d.cachedProfits
 
 def repulsion_force(d, t):
         inv_t = 1/t
@@ -265,16 +274,17 @@ def repulsion_force(d, t):
         else:
             r = 1 / (1+np.exp(exponent))
         return r
-    
-def penaltyCloseVertices(model_2d):
-    unique_pairs = itertools.combinations(model_2d.vertices, 2)
-    sum = 0.0
-    for pair in unique_pairs:
-        sum += repulsion_force(distance2D(*pair), 0.1)
-    return sum
 
-def penaltyCrossedAndCloseEdges(model_2d):
-    """ Return two values with the crossed and close edges penalty """
+def penaltiesCloseVerticesCrossedAndCloseEdges(model_2d):
+    """ Return three values with the close vertices' repulsion, crossed and close edges penalties """
+    if model_2d.cachedPenalties != None:
+        return model_2d.cachedPenalties
+    # Compute close vertices repulsion
+    unique_pairs = itertools.combinations(model_2d.vertices, 2)
+    vertices_repulsion = 0.0
+    for pair in unique_pairs:
+        vertices_repulsion += repulsion_force(distance2D(*pair), 0.1)
+    # Compute crossed and close edges penalties
     unique_edge_pairs = list(itertools.combinations(model_2d.iedges, 2))
     n_crosses = 0
     close_edges_penalty = 0.0
@@ -289,7 +299,8 @@ def penaltyCrossedAndCloseEdges(model_2d):
                 r = repulsion_force(d, 0.05)
                 close_edges_penalty += r
     crosses_penalty = n_crosses/math.log(len(model_2d.iedges),6)
-    return [crosses_penalty, close_edges_penalty]
+    model_2d.cachedPenalties = [vertices_repulsion, crosses_penalty, close_edges_penalty]
+    return model_2d.cachedPenalties
 
 if __name__ == '__main__':
      # Initialize GLUT
@@ -307,10 +318,9 @@ if __name__ == '__main__':
     print('IFS 2D:\n' + str(model_2d.ifaces))
     print('IEDGES 2D:' + str(model_2d.iedges))
     print('AREAS 2D:' + str({key: np.round(value,3) for key, value in model_2d.areas.items()}))
-    profit_area, balance_ratio, f, b = profitProjectedFacesArea(model_2d, model_3d.top_view())
+    profit_area, balance_ratio, f, b = profitsProjectedFacesArea(model_2d, model_3d.top_view())
     print('Profit area:(%.3f*%.2f)=%.3f b(f=%d, b=%d)=%.2f' % (profit_area, balance_ratio, profit_area*balance_ratio, f, b, balance_ratio))
-    vertices_repulsion = penaltyCloseVertices(model_2d)
+    vertices_repulsion, n_crosses, edges_repulsion = penaltiesCloseVerticesCrossedAndCloseEdges(model_2d)
     print('Close vertices total repulsion force:', vertices_repulsion)
-    [n_crosses, edges_repulsion] = penaltyCrossedAndCloseEdges(model_2d)
     print('Cross edges:', n_crosses)
     print('Close edges total repulsion foce:', edges_repulsion)

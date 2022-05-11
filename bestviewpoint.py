@@ -62,9 +62,8 @@ def drawStringBitmaps (x, y, color, str):
 def profitInfo(model_3d, model_2d):
     """ Return profit info for the parameters
         (area, balance_ratio, crosses_repulsion, vertices_repulsion, edges_repulsion, legend) """
-    area, balance_ratio,f, b = model2d.profitProjectedFacesArea(model_2d, model_3d.top_view())
-    vertices_repulsion = model2d.penaltyCloseVertices(model_2d)
-    [crosses_repulsion, edges_repulsion] = model2d.penaltyCrossedAndCloseEdges(model_2d)
+    area, balance_ratio,f, b = model2d.profitsProjectedFacesArea(model_2d, model_3d.top_view())
+    vertices_repulsion, crosses_repulsion, edges_repulsion = model2d.penaltiesCloseVerticesCrossedAndCloseEdges(model_2d)
     profit = area*balance_ratio 
     penalty = crosses_repulsion + vertices_repulsion + edges_repulsion
     total = np.round(profit-penalty,2)
@@ -232,16 +231,16 @@ def keyboardCB(key, x, y):
              
 def tentative_3d_model_cost_fn(tentative_sol):
     global Tentative3DModel, Tentative2DModel
-    Tentative3DModel = copy.copy(Current3DModel) # Shallow copy of the outermost container
+    Tentative3DModel = copy.copy(Current3DModel) # Shallow copy of the outermost container (without cache)
+    Tentative3DModel.cached2dModel = None
     Tentative3DModel.rho, Tentative3DModel.theta, Tentative3DModel.phi = tentative_sol
     aspect_ratio = WndWidth/2.0/(WndHeight-WndBottomLegendGap-WndTopDecorativeGap)
     Mpers = model3d.computeProjectionMatrix(Tentative3DModel, aspect_ratio)
     Mmv = model3d.computeModelviewMatrix(Tentative3DModel)
-    Tentative2DModel = model2d.compute2dModel(Current3DModel, Mpers, Mmv)
+    Tentative2DModel = model2d.compute2dModel(Tentative3DModel, Mpers, Mmv)
     resetGLMatrices()
-    area, balance_ratio, f, b = model2d.profitProjectedFacesArea(Tentative2DModel, Tentative3DModel.top_view())
-    vertices_repulsion = model2d.penaltyCloseVertices(Tentative2DModel)
-    [crosses_repulsion, edges_repulsion] = model2d.penaltyCrossedAndCloseEdges(Tentative2DModel)
+    area, balance_ratio, f, b = model2d.profitsProjectedFacesArea(Tentative2DModel, Tentative3DModel.top_view())
+    vertices_repulsion, crosses_repulsion, edges_repulsion = model2d.penaltiesCloseVerticesCrossedAndCloseEdges(Tentative2DModel)
     total = -area*balance_ratio + vertices_repulsion + crosses_repulsion + edges_repulsion
     return total
 

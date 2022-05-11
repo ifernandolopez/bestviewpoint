@@ -44,6 +44,8 @@ class Model3D:
         self.ifaces = []           # Indexed Face Set (IFS) with indexed faces
         self.center = None
         self.minRadius = None
+        self.cached2dModel = None
+        
     def top_view(self):
         return self.phi < 90
 
