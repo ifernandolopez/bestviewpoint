@@ -67,7 +67,8 @@ def loadModel(path):
     file.close() 
     model_3d.vertices = np.array(model_3d.vertices)
     # Compute the center
-    model_3d.center = ( np.amax(model_3d.vertices, axis=0) + np.amin(model_3d.vertices,axis=0) ) / 2
+    widths = np.amax(model_3d.vertices, axis=0) - np.amin(model_3d.vertices,axis=0)
+    model_3d.center = np.amax(model_3d.vertices, axis=0) - (widths/2.0)
     # Compute the radius covering all the model
     model_3d.minRadius = 0.0
     for vertex in model_3d.vertices:
@@ -105,7 +106,7 @@ def computeModelviewMatrix(model_3d):
     phi = 1.1e-15 if (phi==0) else phi # Hack to prevent failure in glLookAt when x=0, z=0 and v_up = (0,1,0)
     gluLookAt(rho*sind(theta)*sind(phi),rho*cosd(phi),rho*cosd(theta)*sind(phi), 0,0,0, 0,1,0)
     # Move the center of the object to the cordinates origin
-    glTranslated(-model_3d.center[0],-model_3d.center[1],model_3d.center[2])
+    glTranslated(-model_3d.center[0],-model_3d.center[1],-model_3d.center[2])
     Mmv = glGetFloatv(GL_MODELVIEW_MATRIX)
     return Mmv
 
