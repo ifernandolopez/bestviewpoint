@@ -32,6 +32,9 @@ Tentative2DModel = None
 #    True - Optimization finished
 Optimizer = False
 
+# Variables to enable profiling
+WithProfiler, Profiler = False, None
+
 def isOptimizing():
     global Optimizer
     return Optimizer != False and Optimizer != True
@@ -180,8 +183,6 @@ def specialKeyCB(key, x, y):
     Current3DModel.flushCache()
     glutPostRedisplay()
 
-WithProfiler, Profiler = False, None
-
 def keyboardCB(key, x, y):
     global ShowFace, Wireframe, Optimizer, Profiler
     if key.isdigit():
@@ -253,13 +254,17 @@ def tentative_3d_model_cost_fn(tentative_sol):
     return total
 
 def idleCB():
-    global Optimizer, RedrawOptimizationCount
+    global Optimizer, RedrawOptimizationCount, Profiler
     assert Optimizer != False and Optimizer!=True
     if Optimizer.hasFinished():
         glutIdleFunc(None)
         Optimizer = True
         Tentative3DModel = None
         Tentative2DModel = None
+        if WithProfiler:
+            Profiler.stop()
+            Profiler.print()
+            Profiler = None
         glutPostRedisplay()
         return
     better_solution_found = Optimizer.step()
