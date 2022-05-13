@@ -85,9 +85,12 @@ def draw3dInfo(model_2d):
     if Optimizer == True:
         optimization_legend = 'Optimization done'
     elif Optimizer != False:
-        optimization_legend = 'Optimizing T: %.2f' % Optimizer.T
+        if isinstance(Optimizer, optimization.SAOptimizer):
+            optimization_legend = 'SA Optimizing T: %.2f' % Optimizer.T
+        else:
+            optimization_legend = 'TS Optimizing Pending iters: %d' % Optimizer.pending_it
         if Optimizer.has_cooled:
-            optimization_legend += ' (cooling)'
+                optimization_legend += ' (cooling)'
     area, balance_ratio, f, b, crosses_repulsion, vertices_repulsion, edges_repulsion, profit_legend = profitInfo(Current3DModel, model_2d)    
     if Wireframe:
         material_legend = 'Wireframe'
@@ -205,13 +208,17 @@ def keyboardCB(key, x, y):
         resetOptimizerIfFinished()
         Current3DModel.projection = (Current3DModel.projection+1) % 3
         glutPostRedisplay()
-    elif key == b's' or key == b'S':
+    elif key == b's' or key == b'S' or key == b't' or key == b'T':
         if Optimizer==False or Optimizer==True:
             grid_percentage = 0.05
             grid_steps = grid_percentage * np.array((2 * Current3DModel.minRadius, 360, 180))
-            rho, theta, phi = [2*Current3DModel.minRadius,3*Current3DModel.minRadius], [0, 360-grid_steps[1]], [0,180-grid_steps[2]]
+            rho, theta, phi = [2*Current3DModel.minRadius,2.5*Current3DModel.minRadius], [0, 360-grid_steps[1]], [0,180-grid_steps[2]]
             domains = [rho, theta, phi]
-            Optimizer = optimization.SAOptimizer(domains, tentative_3d_model_cost_fn, grid_steps)
+            if key == b's' or key == b'S':
+                OptimizerClass = optimization.SAOptimizer
+            else:
+                OptimizerClass = optimization.TSOptimizer
+            Optimizer = OptimizerClass(domains, tentative_3d_model_cost_fn, grid_steps)
             start_sol = [Current3DModel.rho, Current3DModel.theta, Current3DModel.phi]
             Optimizer.restart(start_sol)
             glutIdleFunc(idleCB)
