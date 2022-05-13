@@ -48,6 +48,9 @@ class Model3D:
         
     def top_view(self):
         return self.phi < 90
+    
+    def flushCache(self):
+        self.cached2dModel = None
 
 def loadModel(path):
     """ Return a Model with the vertices and an Indexed Face Set (IFS) with indexed faces

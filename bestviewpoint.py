@@ -174,6 +174,7 @@ def specialKeyCB(key, x, y):
             Current3DModel.rho -= 0.5
     elif ( key == GLUT_KEY_END ):
         Current3DModel.rho += 0.5
+    Current3DModel.flushCache()
     glutPostRedisplay()
 
 WithProfiler, Profiler = False, None
@@ -204,7 +205,7 @@ def keyboardCB(key, x, y):
         resetOptimizerIfFinished()
         Current3DModel.projection = (Current3DModel.projection+1) % 3
         glutPostRedisplay()
-    elif key == b'r' or key == b'R':
+    elif key == b's' or key == b'S':
         if Optimizer==False or Optimizer==True:
             grid_percentage = 0.05
             grid_steps = grid_percentage * np.array((2 * Current3DModel.minRadius, 360, 180))
@@ -232,7 +233,7 @@ def keyboardCB(key, x, y):
 def tentative_3d_model_cost_fn(tentative_sol):
     global Tentative3DModel, Tentative2DModel
     Tentative3DModel = copy.copy(Current3DModel) # Shallow copy of the outermost container (without cache)
-    Tentative3DModel.cached2dModel = None
+    Tentative3DModel.flushCache()
     Tentative3DModel.rho, Tentative3DModel.theta, Tentative3DModel.phi = tentative_sol
     aspect_ratio = WndWidth/2.0/(WndHeight-WndBottomLegendGap-WndTopDecorativeGap)
     Mpers = model3d.computeProjectionMatrix(Tentative3DModel, aspect_ratio)
@@ -257,6 +258,7 @@ def idleCB():
     better_solution_found = Optimizer.step()
     if better_solution_found:
         Current3DModel.rho, Current3DModel.theta, Current3DModel.phi = Optimizer.best_sol
+        Current3DModel.flushCache()
     glutPostRedisplay()
 
 def popupMenuCB(value):
@@ -277,8 +279,8 @@ def createPopupMenu():
 def loadModel(file_index):
     global Current3DModel, ObjFiles
     Current3DModel = model3d.loadModel(model3d.Model3D.OBJS_DIR + '/' + ObjFiles[file_index])
-    title = 'Arrows (move in shere) Space (Restore) R (Run optimizer) W (Wireframe/Solid) Number (ShowFace) ' \
-          + 'Right Click (Load File): %s' % ObjFiles[file_index]
+    title = 'Arrows (move) Space (Restore) S (SA optimizer) T (TS optimizer) W (Wireframe/Solid) Number (ShowFace) ' \
+          + 'Right Click (Load): %s' % ObjFiles[file_index]
     glutSetWindowTitle(title)
 
 if __name__ == '__main__':
