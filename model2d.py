@@ -36,18 +36,23 @@ def intersection(p1, p2, p3, p4):
                 1 do not intersect
                 2 are parallel or overlapped """
     a, b, c = p2 - p1, p3 - p4,  p1 - p3
-    den = a[1]*b[0] - a[0]*b[1]
+    den = round(a[1]*b[0] - a[0]*b[1], 5)
     # We first analyze the cases where the denominator is zero: quasi-paralled or overlapped
-    if den < 0.05 and den>-0.05:
+    if den < 0.05 and den > -0.05:
         return Intersection.PARALLEL
     # Then we detect the NO intersection case
-    alpha_num = b[1]*c[0] - b[0]*c[1]
-    beta_num = a[0]*c[1] - a[1]*c[0]
-    if den > 0 and (alpha_num <= 0 or alpha_num > den or beta_num <= 0 or beta_num >= den):
+    alpha_num = round(b[1]*c[0] - b[0]*c[1], 5)
+    beta_num = round(a[0]*c[1] - a[1]*c[0], 5)
+    if den > 0 and (alpha_num < 0 or alpha_num > den or beta_num < 0 or beta_num > den):
         return Intersection.NON_INTERSECTING
-    if den < 0 and (alpha_num >= 0 or alpha_num < den or beta_num >= 0 or beta_num <= den):
+    if den < 0 and (alpha_num > 0 or alpha_num < den or beta_num > 0 or beta_num < den):
         return Intersection.NON_INTERSECTING
     # Otherwise, there is an intersection: it can be at a vertex, side or cross intersection
+    alpha_side = alpha_num == 0.0 or alpha_num == den # Detect if the alpha segment ends in the other
+    beta_side = beta_num == 0.0 or beta_num == den # Detect if the beta segment ends in the other
+    if alpha_side or beta_side: # Vertex or side intersection
+        return Intersection.INTERSECTING
+    # Cross intersecton
     return Intersection.INTERSECTING
 
 def are_adjacent_iedges(ie1, ie2):
