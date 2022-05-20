@@ -185,8 +185,13 @@ def specialKeyCB(key, x, y):
 
 def keyboardCB(key, x, y):
     global ShowFace, Wireframe, Optimizer, Profiler
+    upper_face_keys = {b'!':1, b'"':2, b'\xc2':3, b'$':4, b'%':5, b'&':6, b'/':7, b'(':8, b')':9, b'=':0}
+    if key in upper_face_keys.keys():
+        key = str(10 + upper_face_keys[key])
     if key.isdigit():
         face_index = int(key)
+        if glutGetModifiers() == GLUT_ACTIVE_CTRL:
+            face_index += 10
         if (face_index==ShowFace):
             ShowFace = -1 # Disable show face
         else:
@@ -202,12 +207,14 @@ def keyboardCB(key, x, y):
             return
         resetOptimizerIfFinished()
         Current3DModel.rho, Current3DModel.theta, Current3DModel.phi = Current3DModel.DEFAULT_RHO, Current3DModel.DEFAULT_THETA, Current3DModel.DEFAULT_PHI
+        Current3DModel.flushCache()
         glutPostRedisplay()
     elif key == b'p' or key == b'P':
         if not acceptingInteractiveChanges():
             return
         resetOptimizerIfFinished()
         Current3DModel.projection = (Current3DModel.projection+1) % 3
+        Current3DModel.flushCache()
         glutPostRedisplay()
     elif key == b's' or key == b'S' or key == b't' or key == b'T':
         if Optimizer==False or Optimizer==True:
