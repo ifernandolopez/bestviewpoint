@@ -246,7 +246,7 @@ def draw2dModel(model_2d):
 # Profit functions
 
 def balance(f,b):
-    return (f*b-max(f,b)) / max(f,b)
+    return (f*b-max(f,b)) / max(f,b) * (2*f/(f+b))
 
 def profitsProjectedFacesArea(model_2d, is_top_view):
     """ Compute a profit for the projected faces area """
