@@ -47,7 +47,7 @@ class Model3D:
         self.cached2dModel = None
         
     def top_view(self):
-        return self.phi < 90
+        return self.phi < 90 and self.phi > 10
     
     def flushCache(self):
         self.cached2dModel = None
