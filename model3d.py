@@ -34,7 +34,7 @@ class Model3D:
     OBJS_DIR = 'bestviewpoint/objs' 
     EDGES_COLOR = (0.1, 0.5, 0.9, 1.0)
     FACES_COLOR = (0.7, 0.8, 0.9, 0.6)
-    TOP_VIEW_AREA_INFLATION_PERCENTAGE = 0.3
+    TOP_VIEW_AREA_INFLATION_PERCENTAGE = 0.33
     def __init__(self):
         self.filename = None
         self.projection = ProjectionType.PERSPECTIVE
@@ -47,7 +47,7 @@ class Model3D:
         self.cached2dModel = None
         
     def top_view(self):
-        return self.phi < 90 and self.phi > 10
+        return self.phi < 90 and self.phi > 20
     
     def flushCache(self):
         self.cached2dModel = None

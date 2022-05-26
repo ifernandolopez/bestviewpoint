@@ -244,9 +244,8 @@ def draw2dModel(model_2d):
     glEnd()
     
 # Profit functions
-
 def balance(f,b):
-    return (f*b-max(f,b)) / max(f,b) * (2*f/(f+b))
+    return (f*b) / (f+b) * (2*f) / (f+b)
 
 def profitsProjectedFacesArea(model_2d, is_top_view):
     """ Compute a profit for the projected faces area """
@@ -303,7 +302,10 @@ def penaltiesCloseVerticesCrossedAndCloseEdges(model_2d):
                 d = segments_dist(*edges_pair_2d[0], *edges_pair_2d[1])
                 r = repulsion_force(d, 0.05)
                 close_edges_penalty += r
-    crosses_penalty = n_crosses/math.log(len(model_2d.iedges),6)
+    n_edges = len(model_2d.iedges)
+    vertices_repulsion /= n_edges
+    crosses_penalty = n_crosses/n_edges
+    close_edges_penalty /= n_edges
     model_2d.cachedPenalties = [vertices_repulsion, crosses_penalty, close_edges_penalty]
     return model_2d.cachedPenalties
 
