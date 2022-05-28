@@ -1,11 +1,14 @@
+import numpy as np 
+import sys
 from OpenGL.GL import*
 from OpenGL.GLU import*
 from OpenGL.GLUT import*
-import numpy as np 
+
 sind = lambda degrees: np.sin(np.deg2rad(degrees))
 cosd = lambda degrees: np.cos(np.deg2rad(degrees))
 tand = lambda degrees: np.tan(np.deg2rad(degrees))
 distance3D = lambda x,y: np.sqrt((x[0]-y[0])**2 + (x[1]-y[1])**2 + (x[2]-y[2])**2)
+
 class ProjectionType:
     ORTOGONAL = 0
     CABINET = 1
@@ -40,8 +43,8 @@ class Model3D:
         self.projection = ProjectionType.PERSPECTIVE
         self.rho, self.theta, self.phi = Model3D.DEFAULT_RHO, Model3D.DEFAULT_THETA, Model3D.DEFAULT_PHI
         self.fovy = Model3D.DEFAULT_FOVY
-        self.vertices = None    # xyz per vertex
-        self.ifaces = []           # Indexed Face Set (IFS) with indexed faces
+        self.vertices: np.ndarray = None    # xyz per vertex
+        self.ifaces: List[int] = []           # Indexed Face Set (IFS) with indexed faces
         self.center = None
         self.minRadius = None
         self.cached2dModel = None

@@ -1,25 +1,29 @@
 import numpy as np 
 import math
+import sys
 import itertools
 import model3d
 from OpenGL.GL import*
 from OpenGL.GLU import*
 from OpenGL.GLUT import*
+from typing import List, Tuple, Dict
 
 # Helper functions
 
+IEdge = Tuple[int, int]
+
 class AdjMatrix:
     def __init__(self, n_vertices):
-        self.adj_matrix = np.zeros((n_vertices, n_vertices))
-        self.iedges = []
-    def addEdge(self, iv0, iv1):
+        self.adj_matrix: np.ndarray = np.zeros((n_vertices, n_vertices))
+        self.iedges: List[IEdge] = []
+    def addEdge(self, iv0: int, iv1: int):
         if iv0 > iv1:
             iv0, iv1 = iv1, iv0
         if self.adj_matrix[iv0-1,iv1-1] > 0:
             return
         self.adj_matrix[iv0-1,iv1-1] += 1
-        self.iedges.append([iv0, iv1])
-    def getIndexedEdges(self):
+        self.iedges.append((iv0, iv1))
+    def getIndexedEdges(self) -> List[IEdge]:
         return self.iedges
     
 def distance2D(x, y):
@@ -55,27 +59,22 @@ def intersection(p1, p2, p3, p4):
     # Cross intersecton
     return Intersection.INTERSECTING
 
-def are_adjacent_iedges(ie1, ie2):
+def are_adjacent_iedges(ie1: IEdge, ie2: IEdge):
     return ie1[0] == ie2[0] or ie1[0] == ie2[1] or ie1[1] == ie2[0] or ie1[1] == ie2[1]
 
-def tight_angle(model_2d, iedges_pair):
-    origin_vertex = []
-    arrow_vertices = []
+def tight_angle(model_2d, iedges_pair: Tuple[IEdge, IEdge]):
+    origin_vertex: List[int] = []
+    arrow_vertices: list[int] = []
     for v in np.concatenate(iedges_pair):
         if (v in arrow_vertices):
             arrow_vertices.remove(v)
             origin_vertex.append(v)
         else:
             arrow_vertices.append(v)
-    origin_vertex_2d = model_2d.vertices[np.array(origin_vertex)-1][:,0:2]
-    arrow_vertices_2d = model_2d.vertices[np.array(arrow_vertices)-1][:,0:2]
-    vectors_2d = arrow_vertices_2d - origin_vertex_2d
-    try:
-        acos = np.dot(*vectors_2d) / (np.linalg.norm(vectors_2d[0]) * np.linalg.norm(vectors_2d[1]))
-    except(ex):
-        print(ex)
-        print(vectors_2d[0])
-        print(vectors_2d[1])
+    origin_vertex_2d:np.ndarray = model_2d.vertices[np.array(origin_vertex)-1][:,0:2]
+    arrow_vertices_2d:np.ndarray = model_2d.vertices[np.array(arrow_vertices)-1][:,0:2]
+    vectors_2d:np.ndarray = arrow_vertices_2d - origin_vertex_2d
+    acos = np.dot(*vectors_2d) / (np.linalg.norm(vectors_2d[0]) * np.linalg.norm(vectors_2d[1]))
     return acos > 0.985 # vectors_2d form an angle less than 10º
 
 def point_segment_dist(p, p0, p1):
@@ -110,7 +109,7 @@ def point_in_polygon(q, vertices):
     # If the number of crossings was odd, the point is in the polygon
     return odd
 
-def polygon_inside(outer,inner):
+def polygon_inside(outer: np.ndarray,inner:np.ndarray) -> bool:
     """ Test if the inner polygon is inside the outer polygon """
     outer_maxs = np.amax(outer, axis = 0)
     outer_mins = np.amin(outer, axis = 0)
@@ -130,11 +129,11 @@ def polygon_inside(outer,inner):
 class Model2D:
     def __init__(self, model_3d):
         self.model3D = model3d
-        self.vertices = None  # Projected xy vertices
-        self.vertices_z_distances = None # For occlusion detection
-        self.ifaces = []      # Projected Indexed Face Set (IFS) with indexed faces
-        self.iedges = []      # Projected indexed edges, without duplicates
-        self.areas = {}       # Projected faces area. Or 0.0 if any point has been proyected outside the clipping window
+        self.vertices: np.ndarray = None     # Projected xy vertices
+        self.vertices_z_distances: np.ndarray = None # For occlusion detection
+        self.ifaces: List[List] = []         # Projected Indexed Face Set (IFS) with indexed faces
+        self.iedges: List[IEdge] = []        # Projected indexed edges, without duplicates
+        self.areas: Dict[int, float] = {}    # Projected faces area. Or 0.0 if any point has been proyected outside the clipping window
         self.cachedProfits = None
         self.cachedPenalties = None
         
@@ -188,7 +187,7 @@ def auxDetectOccludedFaces(model_2d):
     for i in occluded_faces:
         model_2d.areas[i] *= -1
 
-def compute2dModel(model_3d, Mpers, Mmv):
+def compute2dModel(model_3d: model3d.Model3D, Mpers, Mmv) -> Model2D:
     """ Return a Model2D with the projection of the the model_3d according to Mpers a Mmv
         The Mpers and Mmv were constructed using the projection, rho, theta, phi an fovy of the model_3d """
     if model_3d.cached2dModel != None:
@@ -226,7 +225,7 @@ def compute2dModel(model_3d, Mpers, Mmv):
     model_3d.cached2dModel = model_2d
     return model_2d
 
-def draw2dModel(model_2d):
+def draw2dModel(model_2d) -> None:
     """ Draw the 2D model in normalized coordinates """
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()

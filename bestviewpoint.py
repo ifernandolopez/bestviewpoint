@@ -6,6 +6,7 @@ import model2d
 import optimization
 import numpy as np
 import copy
+import sys
 import glob
 import os
 import pyinstrument
@@ -15,16 +16,16 @@ WndTitle = 'Starting'
 WndTopDecorativeGap = 10
 WndBottomLegendGap = 170
 WndWidth, WndHeight = 1000, 500 + WndTopDecorativeGap + WndBottomLegendGap
-WndId  = None
-Current3DModel = None
-ShowFace = -1 # Face index, or -1 for all faces
-Wireframe = False
+WndId:int  = None
+Current3DModel: model3d.Model3D = None
+ShowFace: int = -1 # Face index, or -1 for all faces
+Wireframe: bool = False
 
 # Tentative3DModel and Tentative2DModel states used during optimization:
 #    None - Optimization has no been executed, or has finished
 #    Objects - Optimization is executing
-Tentative3DModel = None
-Tentative2DModel = None
+Tentative3DModel: model3d.Model3D = None
+Tentative2DModel: model2d.Model2D = None
 
 # Optimizer states:
 #    False - Optimization has not been executed, or has been reset

@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import math
+from typing import List
 
 class Optimizer:
     def __init__(self, domains, cost_fn, grid_steps):
@@ -8,10 +9,11 @@ class Optimizer:
         self.cost_fn = cost_fn
         self.grid_steps = grid_steps
         self.neighbors_fn = Optimizer.grid_neighbors
+        self.best_sol:np.ndarray = None
         self.has_cooled = False
         
     @staticmethod
-    def grid_neighbors(domains, sol, grid_steps):
+    def grid_neighbors(domains, sol, grid_steps) -> List:
         """ Return the neighbors solutions in the grid """
         dimensions = len(sol)
         neighbors = []
@@ -34,14 +36,14 @@ class Optimizer:
                 neighbors.append(lower_sol)
         return neighbors
     
-    def step():
+    def step(self) -> bool:
         """ Executes one optimization iteration """
         """ Returns True/False indicating if a better solution have been found during this iteration """
         """         If True the solution has to be draw """
         """         In this case best_sol, best_E/best_cost contain the best solution found """
         raise NotImplementedError('abstract method')
     
-    def applyCooling(self): 
+    def applyCooling(self) -> None: 
         assert self.has_cooled == False, 'Cooling is applied only once'
         for i in range(len(self.grid_steps)):
             self.grid_steps[i] = self.grid_steps[i] / 5 # Cooling
@@ -52,14 +54,14 @@ class SAOptimizer (Optimizer):
     def __init__(self, domains, cost_fn, grid_steps):
         super().__init__(domains, cost_fn, grid_steps)
         
-    def restart(self, start_sol, T=10000.0, cool_factor = 0.99, stopT = 1.0):
+    def restart(self, start_sol, T=10000.0, cool_factor = 0.99, stopT = 1.0) -> None:
         self.T = T
         self.cool_factor = cool_factor
         self.stopT = stopT
         self.best_sol = self.current_sol = np.array(start_sol)
         self.best_E  = self.cost_fn(start_sol)
         
-    def step(self):
+    def step(self) -> bool:
         assert self.T is not None, 'Call restart first'
         assert not self.hasFinished(), 'You should not call step() if the optimization had finished'
         Ea = self.cost_fn(self.current_sol)
@@ -94,7 +96,7 @@ class TSOptimizer (Optimizer):
         grid_steps = grid_steps 
         super().__init__(domains, cost_fn, grid_steps)
     
-    def restart(self, start_sol, max_it=300, max_tl_len = 50):
+    def restart(self, start_sol, max_it=500, max_tl_len = 50) -> None:
         self.pending_it = max_it
         self.cooling_it = int(0.20*max_it) 
         self.max_tl_len = 100
@@ -102,7 +104,7 @@ class TSOptimizer (Optimizer):
         self.best_sol = self.current_sol = np.array(start_sol)
         self.best_cost  = self.cost_fn(start_sol)
 
-    def step(self):
+    def step(self) -> bool:
         assert self.pending_it is not None, 'Call restart first'   
         assert not self.hasFinished(), 'You should not call step() if the optimization had finished'
         # Each iteration chooses one of the neighbors of current_sol
@@ -142,7 +144,7 @@ class TSOptimizer (Optimizer):
     def hasFinished(self):
         return self.pending_it<=0
 
-def sphere_cost(sol):
+def sphere_cost(sol) -> float:
     """ Return the cost of the shpere problem """
     return sum([v**2.0 for v in sol])
 
