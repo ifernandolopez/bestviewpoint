@@ -291,7 +291,7 @@ def popupMenuCB(value):
 def createPopupMenu():
     global ObjFiles
     glutCreateMenu(popupMenuCB)
-    ObjFiles =  [os.path.split(f)[-1] for f in sorted(glob.glob(model3d.Model3D.OBJS_DIR + '/*.obj'))]
+    ObjFiles =  sorted([os.path.split(f)[-1] for f in glob.glob(model3d.Model3D.OBJS_DIR + '/*.obj')])
     for i,f in enumerate(ObjFiles):
         glutAddMenuEntry(f, i)
     glutAttachMenu(GLUT_RIGHT_BUTTON)
