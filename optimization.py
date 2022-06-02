@@ -96,7 +96,7 @@ class TSOptimizer (Optimizer):
         grid_steps = grid_steps 
         super().__init__(domains, cost_fn, grid_steps)
     
-    def restart(self, start_sol, max_it=500, max_tl_len = 50) -> None:
+    def restart(self, start_sol, max_it=1000, max_tl_len = 50) -> None:
         self.pending_it = max_it
         self.cooling_it = int(0.20*max_it) 
         self.max_tl_len = 100
