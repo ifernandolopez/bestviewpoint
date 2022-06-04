@@ -70,7 +70,7 @@ def profitInfo(model_3d, model_2d):
     vertices_repulsion, crosses_repulsion, edges_repulsion = model2d.penaltiesCloseVerticesCrossedAndCloseEdges(model_2d)
     profit = area*balance_ratio 
     penalty = crosses_repulsion + vertices_repulsion + edges_repulsion
-    total = np.round(profit-penalty,2)
+    total = np.round(profit/(1+penalty),2)
     if total == -0.0:
         total = 0.0
     profit_legend = 'Profit: %.2f/(1+%.2f)=%.2f' % (profit, penalty, total)
