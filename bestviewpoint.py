@@ -321,5 +321,5 @@ if __name__ == '__main__':
     glutSpecialFunc(specialKeyCB)
     # Load the model and show it
     createPopupMenu()
-    loadModel(32)
+    loadModel(26)
     glutMainLoop()
