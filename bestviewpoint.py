@@ -140,8 +140,7 @@ def draw2dInfo(model_2d):
 def displayCB():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glViewport(0, WndBottomLegendGap, WndWidth//2, WndHeight-WndBottomLegendGap-WndTopDecorativeGap)
-    aspect_ratio = WndWidth/2.0/(WndHeight-WndBottomLegendGap-WndTopDecorativeGap)
-    Mpers = model3d.computeProjectionMatrix(Current3DModel, aspect_ratio)
+    Mpers = model3d.computeProjectionMatrix(Current3DModel, get_aspect_ratio())
     Mmv = model3d.computeModelviewMatrix(Current3DModel)
     model3d.draw3dModel(Current3DModel, Wireframe, ShowFace)
     glViewport(0, 0, WndWidth//2, WndHeight) # The 3D viewport lower-left corner and the width-height in pixels
@@ -155,12 +154,23 @@ def displayCB():
         draw2dInfo(Tentative2DModel)
     glutSwapBuffers()
 
-def resizeCB(w, h):
-    global WndWidth, WndHeight
-    WndWidth = w
-    WndHeight = h
-    glutPostRedisplay()
+def get_aspect_ratio():
+    return WndWidth/2.0/(WndHeight-WndBottomLegendGap-WndTopDecorativeGap)
 
+def resizeCB(w, h):
+    """  Prevert changes in the aspect ratio because otherwise the area changes in perspective projection """
+    global WndWidth, WndHeight, Reshaping
+    new_aspect_ratio = w/2.0/(h-WndBottomLegendGap-WndTopDecorativeGap)
+    if new_aspect_ratio > 1.0:
+        w = int(2.0 * (h-WndBottomLegendGap-WndTopDecorativeGap))
+    elif new_aspect_ratio < 1.0:
+        h = int(w/2.0 + WndBottomLegendGap + WndTopDecorativeGap)
+    if new_aspect_ratio > 1.0 or new_aspect_ratio < 1.0:
+        WndWidth, WndHeight = int(w), int(h)
+        glutReshapeWindow( WndWidth, WndHeight)
+    if w!=WndWidth or h!= WndHeight:
+        glutPostRedisplay()
+    
 def specialKeyCB(key, x, y):
     global Optimizer
     if not acceptingInteractiveChanges():
@@ -251,8 +261,7 @@ def tentative_3d_model_cost_fn(tentative_sol):
     Tentative3DModel = copy.copy(Current3DModel) # Shallow copy of the outermost container (without cache)
     Tentative3DModel.flushCache()
     Tentative3DModel.rho, Tentative3DModel.theta, Tentative3DModel.phi = tentative_sol
-    aspect_ratio = WndWidth/2.0/(WndHeight-WndBottomLegendGap-WndTopDecorativeGap)
-    Mpers = model3d.computeProjectionMatrix(Tentative3DModel, aspect_ratio)
+    Mpers = model3d.computeProjectionMatrix(Tentative3DModel, get_aspect_ratio())
     Mmv = model3d.computeModelviewMatrix(Tentative3DModel)
     Tentative2DModel = model2d.compute2dModel(Tentative3DModel, Mpers, Mmv)
     resetGLMatrices()
