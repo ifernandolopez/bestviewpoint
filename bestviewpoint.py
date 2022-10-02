@@ -187,7 +187,7 @@ def specialKeyCB(key, x, y):
         if (Current3DModel.phi>0):
          Current3DModel.phi -= 5
     elif ( key == GLUT_KEY_HOME ):
-        if (Current3DModel.rho>2*Current3DModel.minRadius):
+        if (Current3DModel.rho>Current3DModel.minRadius):
             Current3DModel.rho -= 0.5
     elif ( key == GLUT_KEY_END ):
         Current3DModel.rho += 0.5
