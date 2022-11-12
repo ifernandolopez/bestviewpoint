@@ -6,4 +6,4 @@ The 3D objects must be stored in the <code>objs</code> subdirectory
 
 We also have demo videos available here:
 
-(pending)
+https://github.com/jenarosm/bestpov
