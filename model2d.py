@@ -9,7 +9,6 @@ from OpenGL.GLUT import*
 from typing import List, Tuple, Dict
 
 # Helper functions
-
 IEdge = Tuple[int, int]
 
 class AdjMatrix:

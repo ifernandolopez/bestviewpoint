@@ -2,7 +2,7 @@ import numpy as np
 import random
 import math
 from typing import List
-
+ 
 class Optimizer:
     def __init__(self, domains, cost_fn, grid_steps):
         self.domains = domains
