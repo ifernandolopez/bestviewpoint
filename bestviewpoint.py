@@ -22,15 +22,15 @@ ShowFace: int = -1 # Face index, or -1 for all faces
 Wireframe: bool = False
 
 # Tentative3DModel and Tentative2DModel states used during optimization:
-#    None - Optimization has no been executed, or has finished
-#    Objects - Optimization is executing
+#   None - Optimization has no been executed, or has finished
+#   Objects - Optimization is executing
 Tentative3DModel: model3d.Model3D = None
 Tentative2DModel: model2d.Model2D = None
 
 # Optimizer states:
-#    False - Optimization has not been executed, or has been reset
-#    Object - Executing
-#    True - Optimization finished
+#   False - Optimization has not been executed, or has been reset
+#   Object - Executing
+#   True - Optimization finished
 Optimizer = False
 
 # Variables to enable profiling
