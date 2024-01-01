@@ -2,3 +2,4 @@
 __pycache__
 objs/*.obj
 objs/*.blend
+.vscode
