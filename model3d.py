@@ -3,7 +3,7 @@ import sys
 from OpenGL.GL import*
 from OpenGL.GLU import*
 from OpenGL.GLUT import*
-
+ 
 sind = lambda degrees: np.sin(np.deg2rad(degrees))
 cosd = lambda degrees: np.cos(np.deg2rad(degrees))
 tand = lambda degrees: np.tan(np.deg2rad(degrees))
