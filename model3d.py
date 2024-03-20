@@ -34,7 +34,7 @@ class Model3D:
     DEFAULT_THETA = 0
     DEFAULT_PHI = 90
     DEFAULT_FOVY = 60
-    OBJS_DIR = 'bestviewpoint/objs' 
+    OBJS_DIR = os.path.dirname(os.path.realpath(__file__))+'/objs' 
     EDGES_COLOR = (0.1, 0.5, 0.9, 1.0)
     FACES_COLOR = (0.7, 0.8, 0.9, 0.6)
     TOP_VIEW_AREA_INFLATION_PERCENTAGE = 0.6
