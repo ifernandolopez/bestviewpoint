@@ -1,6 +1,4 @@
-# This GLUT hack is described here https://github.com/MPI-IS/mesh/issues/66
 import os
-#os.environ['PYOPENGL_PLATFORM'] = 'osmesa'
 from OpenGL.GL import*
 from OpenGL.GLU import*
 from OpenGL.GLUT import*
